@@ -1,4 +1,28 @@
-# platform_channel_battery
+# platform_channel_crypt
+
+AES GCM encryption works in iOS using CommonCrypto and SwCrypt
+
+
+
+
+https://stackoverflow.com/questions/34855741/how-to-encrypt-using-aes-gcm-on-ios/36634956#36634956
+
+https://opensource.apple.com/source/CommonCrypto/CommonCrypto-60074/include/CommonCryptorSPI.h
+
+Obj-C https://stackoverflow.com/questions/38913437/aes-128-gcm-objective-c-osx/39777143#39777143
+
+Obj-C https://github.com/indisoluble/AesGcm
+
+CommonCrypto: Let's back to CommonCrypto file,Apple have released it's source code in 
+ https://opensource.apple.com/source/
+
+noch zu ändern in SwCrypt.swift:
+
+https://stackoverflow.com/questions/56417261/withunsafemutablebytes-is-deprecated-use-withunsafemutablebytesr
+
+
+
+
 
 code based on https://docs.flutter.dev/development/platform-integration/platform-channels?tab=type-mappings-java-tab
 
