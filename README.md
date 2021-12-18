@@ -2,8 +2,11 @@
 
 AES GCM encryption works in iOS using CommonCrypto and SwCrypt
 
+https://github.com/soyersoyer/SwCrypt
 
+Hinweis: enthält Änderungen wegen UnsafeMutuableBytes und UnsafePointer unter Swift 5
 
+Funktioniert unter iPhone5 + iOS 15
 
 https://stackoverflow.com/questions/34855741/how-to-encrypt-using-aes-gcm-on-ios/36634956#36634956
 
@@ -20,7 +23,36 @@ noch zu ändern in SwCrypt.swift:
 
 https://stackoverflow.com/questions/56417261/withunsafemutablebytes-is-deprecated-use-withunsafemutablebytesr
 
+```plaintext 
+The old one:
+_ = data.withUnsafeMutableBytes { (bytes: UnsafeMutablePointer<UInt8>) in
+        memcpy((ioData.pointee.mBuffers.mData?.assumingMemoryBound(to: UInt8.self))!, bytes, dataCount)
+    }
 
+The new one:
+_ = data.withUnsafeMutableBytes { (rawMutableBufferPointer) in
+        let bufferPointer = rawMutableBufferPointer.bindMemory(to: UInt8.self)
+        if let address = bufferPointer.baseAddress{
+            memcpy((ioData.pointee.mBuffers.mData?.assumingMemoryBound(to: UInt8.self))!, address, dataCount)
+        }
+    }
+
+my old code:
+var data = Data(count: size)
+data.withUnsafeMutableBytes { dataBytes in
+  _ = CCRandomGenerateBytes!(dataBytes, size)
+}
+return data
+
+my new code:
+var data = Data(count: size)
+data.withUnsafeMutableBytes { dataBytes in
+  _ = CCRandomGenerateBytes!(dataBytes, size)
+}
+return data
+
+
+```
 
 
 

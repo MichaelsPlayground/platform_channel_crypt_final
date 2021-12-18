@@ -41,6 +41,38 @@ class _PlatformChannelState extends State<PlatformChannel> {
     });
   }
 
+  Future<void> _getCryptEncString() async {
+    String returnString;
+    final arguments = {'password' : 'mein geheimes passwort',
+      'plaintext' : 'Mein wichtiges Geheimnis'};
+    try {
+      //final int? result = await methodChannel.invokeMethod('getBatteryLevel');
+      final String result = await methodChannel.invokeMethod('getCryptEncString', arguments);
+      returnString = '$result';
+    } on PlatformException {
+      returnString = 'Failed to get return string.';
+    }
+    setState(() {
+      _returnString = returnString;
+    });
+  }
+
+  Future<void> _getCryptDecString() async {
+    String returnString;
+    final arguments = {'password' : 'mein geheimes passwort',
+      'ciphertext' : _returnString};
+    try {
+      //final int? result = await methodChannel.invokeMethod('getBatteryLevel');
+      final String result = await methodChannel.invokeMethod('getCryptDecString', arguments);
+      returnString = '$result';
+    } on PlatformException {
+      returnString = 'Failed to get return string.';
+    }
+    setState(() {
+      _returnString = returnString;
+    });
+  }
+
   Future<void> _getReturnString() async {
     String returnString;
     final arguments = {'name' : 'test name',
@@ -110,6 +142,24 @@ class _PlatformChannelState extends State<PlatformChannel> {
                   //onPressed: _getReturnString,
                   onPressed: _getCryptString,
                   child: const Text('Refresh'),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ElevatedButton(
+                  //onPressed: _getBatteryLevel,
+                  //onPressed: _getReturnString,
+                  onPressed: _getCryptEncString,
+                  child: const Text('Enc'),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ElevatedButton(
+                  //onPressed: _getBatteryLevel,
+                  //onPressed: _getReturnString,
+                  onPressed: _getCryptDecString,
+                  child: const Text('Dec'),
                 ),
               ),
             ],

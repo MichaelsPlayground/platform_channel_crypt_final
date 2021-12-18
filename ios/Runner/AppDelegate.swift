@@ -72,6 +72,94 @@ enum MyFlutterErrorCode {
                 let gender = args["gender"]!
                 result("\(name) is on IOS10 \(gender)")
 
+            case "getCryptEncString":
+                guard let args = call.arguments as? [String: String] else {return}
+                let password = args["password"]!
+                let plaintext : String? = args["plaintext"]
+                if (plaintext == nil) {result("")}
+
+                print("PBKDF2 SHA256 using CommonCrypto")
+                //let password     = password
+                let salt         = CC.generateRandom(32)
+                let keyByteCount = 32 // AES256
+                let rounds       = 100001
+                let encryptionKey = pbkdf2(password: password, saltData: salt, keyByteCount: keyByteCount, prf: CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), rounds: rounds)
+                print("encryptionKey: " + encryptionKey!.hexEncodedString())
+
+                print()
+                print("AES GCM")
+                let aesKey = encryptionKey!
+                //let aesKey = CC.generateRandom(32)
+                let iv = CC.generateRandom(12)
+                let plainData = plaintext!.data(using: String.Encoding.utf8)!
+                print("p: " + plainData.hexEncodedString())
+                let testData = "This is a test string".data(using: String.Encoding.utf8)!
+                //let e = try? CC.cryptAuth(.encrypt, blockMode: .gcm, algorithm: .aes, data: testData, aData: Data(), key: aesKey, iv: iv, tagLength: 8)
+                let e = try? CC.cryptAuth(.encrypt, blockMode: .gcm, algorithm: .aes, data: plainData, aData: Data(), key: aesKey, iv: iv, tagLength: 16)
+
+                print("e: " + (e?.hexEncodedString())!)
+                //let d = try? CC.cryptAuth(.decrypt, blockMode: .gcm, algorithm: .aes, data: e!, aData: Data(), key: aesKey, iv: iv, tagLength: 16)
+                //print("d: " + (d?.hexEncodedString())!)
+
+                let eB64 : String = (e?.base64EncodedString())!
+                let ivB64 : String = iv.base64EncodedString()
+                let saltB64 : String = salt.base64EncodedString()
+
+                let cComplete = saltB64 + ":" +
+                rounds.string + ":" +
+                ivB64 + ":" +
+                eB64;
+                print("cComplete: " + cComplete)
+                result("\(cComplete)")
+
+            case "getCryptDecString":
+                            guard let args = call.arguments as? [String: String] else {return}
+                            let password = args["password"]!
+                            let completeCiphertext : String? = args["ciphertext"]
+                            if (completeCiphertext == nil) {result("")}
+                            // split ciphertext
+                
+                            let parts = completeCiphertext!.components(separatedBy: ":")
+                            let salt = parts[0].base64Decoded
+                            // let rounds = parts[1] // string to int conversion
+                            let iv = parts[2].base64Decoded
+                            let ciphertext = parts[3].base64Decoded
+
+                            print("PBKDF2 SHA256 using CommonCrypto")
+                            //let password     = password
+                            //let salt         = CC.generateRandom(32)
+                            let keyByteCount = 32 // AES256
+                            let rounds       = 100001
+                let encryptionKey = pbkdf2(password: password, saltData: salt!, keyByteCount: keyByteCount, prf: CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), rounds: rounds)
+                            print("encryptionKey: " + encryptionKey!.hexEncodedString())
+
+                            print()
+                            print("AES GCM")
+                            let aesKey = encryptionKey!
+                            //let aesKey = CC.generateRandom(32)
+                            //let iv = CC.generateRandom(12)
+                            //let plainData = plaintext!.data(using: String.Encoding.utf8)!
+                            //print("p: " + plainData.hexEncodedString())
+                            //let testData = "This is a test string".data(using: String.Encoding.utf8)!
+                            //let e = try? CC.cryptAuth(.encrypt, blockMode: .gcm, algorithm: .aes, data: testData, aData: Data(), key: aesKey, iv: iv, tagLength: 8)
+                            //let e = try? CC.cryptAuth(.encrypt, blockMode: .gcm, algorithm: .aes, data: plainData, aData: Data(), key: aesKey, iv: iv, tagLength: 16)
+
+                            //print("e: " + (e?.hexEncodedString())!)
+                            let d = try? CC.cryptAuth(.decrypt, blockMode: .gcm, algorithm: .aes, data: ciphertext!, aData: Data(), key: aesKey, iv: iv!, tagLength: 16)
+                            //print("d: " + (d?.hexEncodedString())!)
+
+                            //let eB64 : String = (e?.base64EncodedString())!
+                            //let ivB64 : String = iv.base64EncodedString()
+                            //let saltB64 : String = salt.base64EncodedString()
+
+                            //let cComplete = saltB64 + ":" +
+                            //rounds.string + ":" +
+                            //ivB64 + ":" +
+                            //eB64;
+                            //print("cComplete: " + cComplete)
+                            let decryptedtext = String(decoding: d!, as: UTF8.self)
+                            result("\(decryptedtext)")
+
             case "getCryptString":
                 guard let args = call.arguments as? [String: String] else {return}
                 let name = args["name"]!
@@ -114,7 +202,7 @@ enum MyFlutterErrorCode {
                 ivB64 + ":" +
                 eB64;
                 print("cComplete: " + cComplete)
-                result("\(name) encrypts to \(cComplete)")
+                result("\(name) encrypts SwCrypt to \(cComplete)")
 
 
             default:
