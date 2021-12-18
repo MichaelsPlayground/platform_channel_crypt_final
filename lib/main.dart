@@ -18,11 +18,7 @@ class PlatformChannel extends StatefulWidget {
 class _PlatformChannelState extends State<PlatformChannel> {
   static const MethodChannel methodChannel =
   MethodChannel('samples.flutter.io/strings');
-  //static const EventChannel eventChannel =
-  //EventChannel('samples.flutter.io/charging');
 
-  String _batteryLevel = 'Battery level: unknown.';
-  String _chargingStatus = 'Battery status: unknown.';
   String _returnString = 'Return string: unknown';
 
   Future<void> _getCryptString() async {
@@ -30,7 +26,6 @@ class _PlatformChannelState extends State<PlatformChannel> {
     final arguments = {'name' : 'test name',
       'gender' : 'male'};
     try {
-      //final int? result = await methodChannel.invokeMethod('getBatteryLevel');
       final String result = await methodChannel.invokeMethod('getCryptString', arguments);
       returnString = 'ReturnString: $result.';
     } on PlatformException {
@@ -46,7 +41,6 @@ class _PlatformChannelState extends State<PlatformChannel> {
     final arguments = {'password' : 'mein geheimes passwort',
       'plaintext' : 'Mein wichtiges Geheimnis'};
     try {
-      //final int? result = await methodChannel.invokeMethod('getBatteryLevel');
       final String result = await methodChannel.invokeMethod('getCryptEncString', arguments);
       returnString = '$result';
     } on PlatformException {
@@ -62,7 +56,6 @@ class _PlatformChannelState extends State<PlatformChannel> {
     final arguments = {'password' : 'mein geheimes passwort',
       'ciphertext' : _returnString};
     try {
-      //final int? result = await methodChannel.invokeMethod('getBatteryLevel');
       final String result = await methodChannel.invokeMethod('getCryptDecString', arguments);
       returnString = '$result';
     } on PlatformException {
@@ -73,56 +66,10 @@ class _PlatformChannelState extends State<PlatformChannel> {
     });
   }
 
-  Future<void> _getReturnString() async {
-    String returnString;
-    final arguments = {'name' : 'test name',
-      'gender' : 'male'};
-    try {
-      //final int? result = await methodChannel.invokeMethod('getBatteryLevel');
-      final String result = await methodChannel.invokeMethod('getReturnString', arguments);
-      returnString = 'ReturnString: $result.';
-    } on PlatformException {
-      returnString = 'Failed to get return string.';
-    }
-    setState(() {
-      _returnString = returnString;
-    });
-  }
-
-
-  Future<void> _getBatteryLevel() async {
-    String batteryLevel;
-    final arguments = {'name' : 'test name'}; // new
-    try {
-      //final int? result = await methodChannel.invokeMethod('getBatteryLevel');
-      final String result = await methodChannel.invokeMethod('getBatteryLevel', arguments);
-      batteryLevel = 'Battery level: $result%.';
-    } on PlatformException {
-      batteryLevel = 'Failed to get battery level.';
-    }
-    setState(() {
-      _batteryLevel = batteryLevel;
-    });
-  }
-
   @override
   void initState() {
     super.initState();
-    //eventChannel.receiveBroadcastStream().listen(_onEvent, onError: _onError);
   }
-/*
-  void _onEvent(Object? event) {
-    setState(() {
-      _chargingStatus =
-      "Battery status: ${event == 'charging' ? '' : 'dis'}charging.";
-    });
-  }
-  void _onError(Object error) {
-    setState(() {
-      _chargingStatus = 'Battery status: unknown.';
-    });
-  }
-*/
 
   @override
   Widget build(BuildContext context) {
@@ -138,8 +85,6 @@ class _PlatformChannelState extends State<PlatformChannel> {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: ElevatedButton(
-                  //onPressed: _getBatteryLevel,
-                  //onPressed: _getReturnString,
                   onPressed: _getCryptString,
                   child: const Text('Refresh'),
                 ),
@@ -147,8 +92,6 @@ class _PlatformChannelState extends State<PlatformChannel> {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: ElevatedButton(
-                  //onPressed: _getBatteryLevel,
-                  //onPressed: _getReturnString,
                   onPressed: _getCryptEncString,
                   child: const Text('Enc'),
                 ),
@@ -156,8 +99,6 @@ class _PlatformChannelState extends State<PlatformChannel> {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: ElevatedButton(
-                  //onPressed: _getBatteryLevel,
-                  //onPressed: _getReturnString,
                   onPressed: _getCryptDecString,
                   child: const Text('Dec'),
                 ),
