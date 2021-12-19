@@ -12,6 +12,10 @@ sondern auf einem Pull Request https://github.com/soyersoyer/SwCrypt/pull/65
 
 Version beinhaltet nun neben dem iOS auch den Android native code
 
+iOS + android geben die zahl der iterations aus und lesen die auch beim decrypt wieder ein
+
+todo: pre-check des ciphertextes (anzahl der elemente), damit es nicht zu einem problem kommt 
+
 WICHTIG: beide Versionen sind noch nicht kompatibel, da die Zahl der Iterationen noch fehlt 
 (in iOS im Ausgabestring enthalten, bei Android noch nicht)
 

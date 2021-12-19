@@ -59,11 +59,12 @@ public class MainActivity extends FlutterActivity {
                         switch(callMethod) {
                             case "getCryptEncString":
                                 String password1 = arguments.get("password");
+                                String iterations1 = arguments.get("iterations");
                                 String plaintext1 = arguments.get("plaintext");
                                 // end new
                                 String resultString1 = "";
                                 char[] passwordChar1 = password1.toCharArray();
-                                resultString1 = aesGcmPbkdf2EncryptToBase64Android(passwordChar1, plaintext1);
+                                resultString1 = aesGcmPbkdf2EncryptToBase64Android(passwordChar1, iterations1, plaintext1);
                                 result.success(resultString1);
                                 break;
                             case "getCryptDecString":
@@ -75,7 +76,24 @@ public class MainActivity extends FlutterActivity {
                                 resultString2 = aesGcmPbkdf2DecryptFromBase64Android(passwordChar2, ciphertext2);
                                 result.success(resultString2);
                                 break;
-
+                            case "getCryptEncStringOld":
+                                String password1o = arguments.get("password");
+                                String plaintext1o = arguments.get("plaintext");
+                                // end new
+                                String resultString1o = "";
+                                char[] passwordChar1o = password1o.toCharArray();
+                                resultString1o = aesGcmPbkdf2EncryptToBase64AndroidOld(passwordChar1o, plaintext1o);
+                                result.success(resultString1o);
+                                break;
+                            case "getCryptDecStringOld":
+                                String password2old= arguments.get("password");
+                                String ciphertext2old = arguments.get("ciphertext");
+                                // end new
+                                String resultString2old = "";
+                                char[] passwordChar2old = password2old.toCharArray();
+                                resultString2old = aesGcmPbkdf2DecryptFromBase64AndroidOld(passwordChar2old, ciphertext2old);
+                                result.success(resultString2old);
+                                break;
                             case "getReturnString":
                                 String name = arguments.get("name");
                                 String gender = arguments.get("gender");
@@ -172,7 +190,86 @@ public class MainActivity extends FlutterActivity {
     }
 
     @RequiresApi(api = VERSION_CODES.KITKAT)
-    private static String aesGcmPbkdf2EncryptToBase64Android(char[] passphrase, String data) {
+    private static String aesGcmPbkdf2EncryptToBase64Android(char[] passphrase, String iterationsString, String data) {
+        int PBKDF2_ITERATIONS = 0;
+        try {
+            PBKDF2_ITERATIONS = Integer.parseInt(iterationsString);
+        } catch(NumberFormatException nfe) {
+            PBKDF2_ITERATIONS = 10000; // minimum
+        }
+        //int PBKDF2_ITERATIONS = 10001;
+        SecretKeyFactory secretKeyFactory = null;
+        byte[] key;
+        byte[] salt = generateSalt32Byte();
+        byte[] nonce = generateRandomNonce();
+        try {
+            secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            KeySpec keySpec = new PBEKeySpec(passphrase, salt, PBKDF2_ITERATIONS, 32 * 8);
+            key = secretKeyFactory.generateSecret(keySpec).getEncoded();
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            e.printStackTrace();
+            return "";
+        }
+        SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
+        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(16 * 8, nonce);
+        Cipher cipher = null;
+        try {
+            cipher = Cipher.getInstance("AES/GCM/NOPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, gcmParameterSpec);
+            byte[] ciphertextWithTag = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            String saltBase64 = base64Encoding(salt);
+            String roundsString = String.valueOf(PBKDF2_ITERATIONS);
+            String nonceBase64 = base64Encoding(nonce);
+            String ciphertextBase64 = base64Encoding(ciphertextWithTag);
+            return
+               saltBase64 + ":" + roundsString + ":" + nonceBase64 + ":" + ciphertextBase64;
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    @RequiresApi(api = VERSION_CODES.KITKAT)
+    private static String aesGcmPbkdf2DecryptFromBase64Android(char[] passphrase, String data) {
+        String[] parts = data.split(":", 0);
+        byte[] salt = base64Decoding(parts[0]);
+        String iterationsString = parts[1];
+        byte[] nonce = base64Decoding(parts[2]);
+        byte[] ciphertextWithTag = base64Decoding(parts[3]);
+        int PBKDF2_ITERATIONS = 0;
+        try {
+            PBKDF2_ITERATIONS = Integer.parseInt(iterationsString);
+        } catch(NumberFormatException nfe) {
+            PBKDF2_ITERATIONS = 10000; // minimum
+        }
+        if ((salt.length != 32) | (nonce.length != 12) | (ciphertextWithTag.length < 16)) return "";
+        // key derivation
+        SecretKeyFactory secretKeyFactory = null;
+        byte[] key;
+        try {
+            secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            KeySpec keySpec = new PBEKeySpec(passphrase, salt, PBKDF2_ITERATIONS, 32 * 8);
+            key = secretKeyFactory.generateSecret(keySpec).getEncoded();
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            e.printStackTrace();
+            return "";
+        }
+        SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
+        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(16 * 8, nonce);
+        Cipher cipher = null;
+        try {
+            cipher = Cipher.getInstance("AES/GCM/NOPadding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, gcmParameterSpec);
+            byte[] decryptedtext = cipher.doFinal(ciphertextWithTag);
+            return new String(decryptedtext);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    @RequiresApi(api = VERSION_CODES.KITKAT)
+    private static String aesGcmPbkdf2EncryptToBase64AndroidOld(char[] passphrase, String data) {
         int PBKDF2_ITERATIONS = 10001;
         SecretKeyFactory secretKeyFactory = null;
         byte[] key;
@@ -205,7 +302,7 @@ public class MainActivity extends FlutterActivity {
             return
                     //+ saltBase64 + ":" + nonceBase64 + ":" + ciphertextBase64 + ":" + gcmTagBase64
                     saltBase64 + ":" + nonceBase64 + ":" + ciphertextBase64;
-                    //+ "\n" + masterkeyImportFooterLine;
+            //+ "\n" + masterkeyImportFooterLine;
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
             e.printStackTrace();
             return "";
@@ -213,7 +310,7 @@ public class MainActivity extends FlutterActivity {
     }
 
     @RequiresApi(api = VERSION_CODES.KITKAT)
-    private static String aesGcmPbkdf2DecryptFromBase64Android(char[] passphrase, String data) {
+    private static String aesGcmPbkdf2DecryptFromBase64AndroidOld(char[] passphrase, String data) {
         int PBKDF2_ITERATIONS = 10001;
         String[] parts = data.split(":", 0);
         byte[] salt = base64Decoding(parts[0]);
