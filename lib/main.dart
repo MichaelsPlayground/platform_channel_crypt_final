@@ -43,6 +43,7 @@ class _PlatformChannelState extends State<PlatformChannel> {
     try {
       final String result = await methodChannel.invokeMethod('getCryptEncString', arguments);
       returnString = '$result';
+      print(returnString);
     } on PlatformException {
       returnString = 'Failed to get return string.';
     }
@@ -53,6 +54,11 @@ class _PlatformChannelState extends State<PlatformChannel> {
 
   Future<void> _getCryptDecString() async {
     String returnString;
+    // ios
+    //_returnString = 'a1uTWRddpW24gPWvLvNUlE1ZUqfbdTOiLfJO4X5YHUo=:10001:6uOdtkH5ORQfTAeS:MdLfcw6ZS9ZMQoPTn8Vhvwxf/dRKXWyVEXKER6NCVQzZ+eBbZwQzTA==';
+    _returnString = 'a1uTWRddpW24gPWvLvNUlE1ZUqfbdTOiLfJO4X5YHUo=:6uOdtkH5ORQfTAeS:MdLfcw6ZS9ZMQoPTn8Vhvwxf/dRKXWyVEXKER6NCVQzZ+eBbZwQzTA==';
+    // android
+    //_returnString = 'GtI0M5LLBkQA5vztZ3LhQupPwslLMsmagnqfHCnV/a4=:DG81eBnqgBDKI+bG:kVehtaYbIoTmhA1bmiY4peb4KymN5RqgMDmokM1TRiWhAfo5Oh0I7Q==';
     final arguments = {'password' : 'mein geheimes passwort',
       'ciphertext' : _returnString};
     try {

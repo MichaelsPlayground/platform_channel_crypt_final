@@ -1,14 +1,17 @@
 // Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-import UIKit
-import Flutter
 
 import CommonCrypto
+import Flutter
 import Foundation
+// Copyright 2014 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+import UIKit
 
 enum ChannelName {
-    static let strings = "samples.flutter.io/strings"
+  static let strings = "samples.flutter.io/strings"
 }
 
 enum MyFlutterErrorCode {
@@ -16,200 +19,209 @@ enum MyFlutterErrorCode {
 }
 
 @UIApplicationMain
-@objc class AppDelegate: FlutterAppDelegate{
-
+@objc class AppDelegate: FlutterAppDelegate {
 
   override func application(
     _ application: UIApplication,
-    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-
-
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
 
     let controller = window?.rootViewController as! FlutterViewController
-        let stringChannel = FlutterMethodChannel(name: ChannelName.strings,
-                                                  binaryMessenger: controller.binaryMessenger)
+    let stringChannel = FlutterMethodChannel(
+      name: ChannelName.strings,
+      binaryMessenger: controller.binaryMessenger)
 
-        GeneratedPluginRegistrant.register(with: self)
+    GeneratedPluginRegistrant.register(with: self)
 
     // new Johannes Milke
-        stringChannel.setMethodCallHandler({
-            (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in switch call.method{
-            case "getCryptEncString":
-                guard let args = call.arguments as? [String: String] else {return}
-                let password = args["password"]!
-                let plaintext : String? = args["plaintext"]
-                if (plaintext == nil) {result("")}
+    stringChannel.setMethodCallHandler({
+      (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
+      switch call.method {
+      case "getCryptEncString":
+        guard let args = call.arguments as? [String: String] else { return }
+        let password = args["password"]!
+        let plaintext: String? = args["plaintext"]
+        if plaintext == nil { result("") }
 
-                print("PBKDF2 SHA256 using CommonCrypto")
-                let salt         = CC.generateRandom(32)
-                let keyByteCount = 32 // AES256
-                let rounds       = 100001
-                let encryptionKey = pbkdf2(password: password, saltData: salt, keyByteCount: keyByteCount, prf: CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), rounds: rounds)
-                print("encryptionKey: " + encryptionKey!.hexEncodedString())
+        print("PBKDF2 SHA256 using CommonCrypto")
+        let salt = CC.generateRandom(32)
+        let keyByteCount = 32  // AES256
+        let rounds = 10001
+        let encryptionKey = pbkdf2(
+          password: password, saltData: salt, keyByteCount: keyByteCount,
+          prf: CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), rounds: rounds)
+        print("encryptionKey: " + encryptionKey!.hexEncodedString())
 
-                print()
-                print("AES GCM")
-                let aesKey = encryptionKey!
-                let iv = CC.generateRandom(12)
-                let plainData = plaintext!.data(using: String.Encoding.utf8)!
-                print("p: " + plainData.hexEncodedString())
-                let testData = "This is a test string".data(using: String.Encoding.utf8)!
-                let e = try? CC.cryptAuth(.encrypt, blockMode: .gcm, algorithm: .aes, data: plainData, aData: Data(), key: aesKey, iv: iv, tagLength: 16)
-                print("e: " + (e?.hexEncodedString())!)
-                let eB64 : String = (e?.base64EncodedString())!
-                let ivB64 : String = iv.base64EncodedString()
-                let saltB64 : String = salt.base64EncodedString()
+        print()
+        print("AES GCM")
+        let aesKey = encryptionKey!
+        let iv = CC.generateRandom(12)
+        let plainData = plaintext!.data(using: String.Encoding.utf8)!
+        print("p: " + plainData.hexEncodedString())
+        let testData = "This is a test string".data(using: String.Encoding.utf8)!
+        let e = try? CC.cryptAuth(
+          .encrypt, blockMode: .gcm, algorithm: .aes, data: plainData, aData: Data(), key: aesKey,
+          iv: iv, tagLength: 16)
+        print("e: " + (e?.hexEncodedString())!)
+        let eB64: String = (e?.base64EncodedString())!
+        let ivB64: String = iv.base64EncodedString()
+        let saltB64: String = salt.base64EncodedString()
 
-                let cComplete = saltB64 + ":" +
-                rounds.string + ":" +
-                ivB64 + ":" +
-                eB64;
-                print("cComplete: " + cComplete)
-                result("\(cComplete)")
+        let cComplete = saltB64 + ":" + rounds.string + ":" + ivB64 + ":" + eB64
+        print("cComplete: " + cComplete)
+        result("\(cComplete)")
 
-            case "getCryptDecString":
-                            guard let args = call.arguments as? [String: String] else {return}
-                            let password = args["password"]!
-                            let completeCiphertext : String? = args["ciphertext"]
-                            if (completeCiphertext == nil) {result("")}
-                            // split ciphertext
-                
-                            let parts = completeCiphertext!.components(separatedBy: ":")
-                            let salt = parts[0].base64Decoded
-                            // let rounds = parts[1] // string to int conversion
-                            let iv = parts[2].base64Decoded
-                            let ciphertext = parts[3].base64Decoded
+      case "getCryptDecString":
+        guard let args = call.arguments as? [String: String] else { return }
+        let password = args["password"]!
+        let completeCiphertext: String? = args["ciphertext"]
+        if completeCiphertext == nil { result("") }
+        // split ciphertext
 
-                            print("PBKDF2 SHA256 using CommonCrypto")
-                            let keyByteCount = 32 // AES256
-                            let rounds       = 100001
-                let encryptionKey = pbkdf2(password: password, saltData: salt!, keyByteCount: keyByteCount, prf: CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), rounds: rounds)
-                            print("encryptionKey: " + encryptionKey!.hexEncodedString())
+        let parts = completeCiphertext!.components(separatedBy: ":")
+        let salt = parts[0].base64Decoded
+        // let rounds = parts[1] // string to int conversion
+        let iv = parts[2].base64Decoded
+        let ciphertext = parts[3].base64Decoded
 
-                            print()
-                            print("AES GCM")
-                            let aesKey = encryptionKey!
-                            let d = try? CC.cryptAuth(.decrypt, blockMode: .gcm, algorithm: .aes, data: ciphertext!, aData: Data(), key: aesKey, iv: iv!, tagLength: 16)
-                            let decryptedtext = String(decoding: d!, as: UTF8.self)
-                            result("\(decryptedtext)")
+        print("PBKDF2 SHA256 using CommonCrypto")
+        let keyByteCount = 32  // AES256
+        let rounds = 10001
+        let encryptionKey = pbkdf2(
+          password: password, saltData: salt!, keyByteCount: keyByteCount,
+          prf: CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), rounds: rounds)
+        print("encryptionKey: " + encryptionKey!.hexEncodedString())
 
-            case "getCryptString":
-                guard let args = call.arguments as? [String: String] else {return}
-                let name = args["name"]!
-                let gender = args["gender"]!
+        print()
+        print("AES GCM")
+        let aesKey = encryptionKey!
+        let d = try? CC.cryptAuth(
+          .decrypt, blockMode: .gcm, algorithm: .aes, data: ciphertext!, aData: Data(), key: aesKey,
+          iv: iv!, tagLength: 16)
+        let decryptedtext = String(decoding: d!, as: UTF8.self)
+        result("\(decryptedtext)")
 
-                print("PBKDF2 SHA256 using CommonCrypto")
-                let password     = "password"
-                let salt         = Data(_: [0x73, 0x61, 0x6c, 0x74, 0x44, 0x61, 0x74, 0x61])
-                let keyByteCount = 32 // AES256
-                let rounds       = 100001
-                let encryptionKey = pbkdf2(password: password, saltData: salt, keyByteCount: keyByteCount, prf: CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), rounds: rounds)
-                print("encryptionKey: " + encryptionKey!.hexEncodedString())
+      case "getCryptString":
+        guard let args = call.arguments as? [String: String] else { return }
+        let name = args["name"]!
+        let gender = args["gender"]!
 
-                print("generate random number")
-                let randomData = try! secureRandomData(count: 32)
-                print("random: " + randomData.hexEncodedString())
+        print("PBKDF2 SHA256 using CommonCrypto")
+        let password = "password"
+        let salt = Data(_: [0x73, 0x61, 0x6c, 0x74, 0x44, 0x61, 0x74, 0x61])
+        let keyByteCount = 32  // AES256
+        let rounds = 10001
+        let encryptionKey = pbkdf2(
+          password: password, saltData: salt, keyByteCount: keyByteCount,
+          prf: CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), rounds: rounds)
+        print("encryptionKey: " + encryptionKey!.hexEncodedString())
 
-                print()
-                print("AES GCM")
-                let aesKey = CC.generateRandom(32)
-                let iv = CC.generateRandom(12)
-                let testData = "This is a test string".data(using: String.Encoding.utf8)!
-                print("p: " + testData.hexEncodedString())
-                
-                let e = try? CC.cryptAuth(.encrypt, blockMode: .gcm, algorithm: .aes, data: testData, aData: Data(), key: aesKey, iv: iv, tagLength: 8)
-                
-                print("e: " + (e?.hexEncodedString())!)
-                        
-                let d = try? CC.cryptAuth(.decrypt, blockMode: .gcm, algorithm: .aes, data: e!, aData: Data(), key: aesKey, iv: iv, tagLength: 8)
-                        
-                print("d: " + (d?.hexEncodedString())!)
+        print("generate random number")
+        let randomData = try! secureRandomData(count: 32)
+        print("random: " + randomData.hexEncodedString())
 
-                let eB64 : String = (e?.base64EncodedString())!
-                let ivB64 : String = iv.base64EncodedString()
-                let saltB64 : String = salt.base64EncodedString()
-                
-                let cComplete = saltB64 + ":" +
-                rounds.string + ":" +
-                ivB64 + ":" +
-                eB64;
-                print("cComplete: " + cComplete)
-                result("\(name) encrypts SwCrypt to \(cComplete)")
+        print()
+        print("AES GCM")
+        let aesKey = CC.generateRandom(32)
+        let iv = CC.generateRandom(12)
+        let testData = "This is a test string".data(using: String.Encoding.utf8)!
+        print("p: " + testData.hexEncodedString())
 
+        let e = try? CC.cryptAuth(
+          .encrypt, blockMode: .gcm, algorithm: .aes, data: testData, aData: Data(), key: aesKey,
+          iv: iv, tagLength: 8)
 
-            default:
-                result(FlutterMethodNotImplemented)
-            }
+        print("e: " + (e?.hexEncodedString())!)
 
-        })
+        let d = try? CC.cryptAuth(
+          .decrypt, blockMode: .gcm, algorithm: .aes, data: e!, aData: Data(), key: aesKey, iv: iv,
+          tagLength: 8)
 
-        return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+        print("d: " + (d?.hexEncodedString())!)
+
+        let eB64: String = (e?.base64EncodedString())!
+        let ivB64: String = iv.base64EncodedString()
+        let saltB64: String = salt.base64EncodedString()
+
+        let cComplete = saltB64 + ":" + rounds.string + ":" + ivB64 + ":" + eB64
+        print("cComplete: " + cComplete)
+        result("\(name) encrypts SwCrypt to \(cComplete)")
+
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+
+    })
+
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
 }
 
 func secureRandomData(count: Int) throws -> Data {
-    var bytes = [Int8](repeating: 0, count: count)
+  var bytes = [Int8](repeating: 0, count: count)
 
-    // Fill bytes with secure random data
-    let status = SecRandomCopyBytes(
-        kSecRandomDefault,
-        count,
-        &bytes
-    )
-    
-    // A status of errSecSuccess indicates success
-    if status == errSecSuccess {
-        // Convert bytes to Data
-        let data = Data(bytes: bytes, count: count)
-        return data
-    }
-    else {
-        // Handle error
-        return Data(_: [0x0])
-    }
+  // Fill bytes with secure random data
+  let status = SecRandomCopyBytes(
+    kSecRandomDefault,
+    count,
+    &bytes
+  )
+
+  // A status of errSecSuccess indicates success
+  if status == errSecSuccess {
+    // Convert bytes to Data
+    let data = Data(bytes: bytes, count: count)
+    return data
+  } else {
+    // Handle error
+    return Data(_: [0x0])
+  }
 }
 
-private func pbkdf2(password: String, saltData: Data, keyByteCount: Int, prf: CCPseudoRandomAlgorithm, rounds: Int) -> Data? {
-    guard let passwordData = password.data(using: .utf8) else { return nil }
-    var derivedKeyData = Data(repeating: 0, count: keyByteCount)
-    let derivedCount = derivedKeyData.count
-    let derivationStatus: Int32 = derivedKeyData.withUnsafeMutableBytes { derivedKeyBytes in
-        let keyBuffer: UnsafeMutablePointer<UInt8> =
-            derivedKeyBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
-        return saltData.withUnsafeBytes { saltBytes -> Int32 in
-            let saltBuffer: UnsafePointer<UInt8> = saltBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return CCKeyDerivationPBKDF(
-                CCPBKDFAlgorithm(kCCPBKDF2),
-                password,
-                passwordData.count,
-                saltBuffer,
-                saltData.count,
-                prf,
-                UInt32(rounds),
-                keyBuffer,
-                derivedCount)
-        }
+private func pbkdf2(
+  password: String, saltData: Data, keyByteCount: Int, prf: CCPseudoRandomAlgorithm, rounds: Int
+) -> Data? {
+  guard let passwordData = password.data(using: .utf8) else { return nil }
+  var derivedKeyData = Data(repeating: 0, count: keyByteCount)
+  let derivedCount = derivedKeyData.count
+  let derivationStatus: Int32 = derivedKeyData.withUnsafeMutableBytes { derivedKeyBytes in
+    let keyBuffer: UnsafeMutablePointer<UInt8> =
+      derivedKeyBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
+    return saltData.withUnsafeBytes { saltBytes -> Int32 in
+      let saltBuffer: UnsafePointer<UInt8> = saltBytes.baseAddress!.assumingMemoryBound(
+        to: UInt8.self)
+      return CCKeyDerivationPBKDF(
+        CCPBKDFAlgorithm(kCCPBKDF2),
+        password,
+        passwordData.count,
+        saltBuffer,
+        saltData.count,
+        prf,
+        UInt32(rounds),
+        keyBuffer,
+        derivedCount)
     }
-    return derivationStatus == kCCSuccess ? derivedKeyData : nil
+  }
+  return derivationStatus == kCCSuccess ? derivedKeyData : nil
 }
 
 extension StringProtocol {
-    var data: Data { Data(utf8) }
-    var base64Encoded: Data { data.base64EncodedData() }
-    var base64Decoded: Data? { Data(base64Encoded: string) }
+  var data: Data { Data(utf8) }
+  var base64Encoded: Data { data.base64EncodedData() }
+  var base64Decoded: Data? { Data(base64Encoded: string) }
 }
 extension LosslessStringConvertible {
-    var string: String { .init(self) }
+  var string: String { .init(self) }
 }
 extension Sequence where Element == UInt8 {
-    var data: Data { .init(self) }
-    var base64Decoded: Data? { Data(base64Encoded: data) }
-    var string: String? { String(bytes: self, encoding: .utf8) }
+  var data: Data { .init(self) }
+  var base64Decoded: Data? { Data(base64Encoded: data) }
+  var string: String? { String(bytes: self, encoding: .utf8) }
 }
 
 extension Data {
-    func hexEncodedString() -> String {
-        return map { String(format: "%02hhx", $0) }.joined()
-    }
+  func hexEncodedString() -> String {
+    return map { String(format: "%02hhx", $0) }.joined()
+  }
 }

@@ -6,6 +6,23 @@ https://github.com/soyersoyer/SwCrypt
 
 Hinweis: enthält Änderungen wegen UnsafeMutuableBytes und UnsafePointer unter Swift 5
 
+neu 19.12.2021:
+Diese Version basiert NICHT auf dem offiziell Repository mit Versionsstand 5.1.4,
+sondern auf einem Pull Request https://github.com/soyersoyer/SwCrypt/pull/65
+
+Version beinhaltet nun neben dem iOS auch den Android native code
+
+WICHTIG: beide Versionen sind noch nicht kompatibel, da die Zahl der Iterationen noch fehlt 
+(in iOS im Ausgabestring enthalten, bei Android noch nicht)
+
+alt: 
+Diese Version basiert NICHT auf dem offiziell Repository mit Versionsstand 5.1.4,
+ sondern auf einem Pull Request https://github.com/soyersoyer/SwCrypt/pull/51
+
+
+
+
+
 Funktioniert unter iPhone5 + iOS 15
 
 https://stackoverflow.com/questions/34855741/how-to-encrypt-using-aes-gcm-on-ios/36634956#36634956
@@ -18,10 +35,6 @@ Obj-C https://github.com/indisoluble/AesGcm
 
 CommonCrypto: Let's back to CommonCrypto file,Apple have released it's source code in 
  https://opensource.apple.com/source/
-
-noch zu ändern in SwCrypt.swift:
-
-https://stackoverflow.com/questions/56417261/withunsafemutablebytes-is-deprecated-use-withunsafemutablebytesr
 
 ```plaintext 
 The old one:
